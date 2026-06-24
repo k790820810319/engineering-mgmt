@@ -187,10 +187,9 @@ textarea.form-input{resize:vertical;min-height:90px}
 <div id="modalRoot"></div>
 <div class="toast" id="toast"></div>
 <script>
-var GEMINI_API_KEY='AQ.Ab8RN6L7ZGsPvtO14RAOiqery2kTYtBfPluEUqpMxUx7jJP-dQ';
-var GEMINI_URL='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+GEMINI_API_KEY;
+// Gemini 分析已移至 GAS 後端，前端不再持有 API Key
 
-// ── GAS Web App URL（部署後填入）────────────────────
+// ── GAS Web App URL ─────────────────────────────────
 var GAS_URL='https://script.google.com/macros/s/AKfycbxJdwVe6XYu6WsiUBX_awsIcRtp2_sz7YM392gCTNUZrpCKARHPuhWieA4WHSDBz02X/exec';
 
 function callGAS(action,payload){
@@ -722,13 +721,19 @@ function bindEvents(){
     var p=getProject();if(!p)return;
     var loadEl=qs('#aiLoading'),resEl=qs('#aiResult');
     if(loadEl)loadEl.style.display='flex';if(resEl)resEl.style.display='none';
-    var lines=['請以繁體中文分析以下工程案場施工紀錄，給出延誤分析和改善建議。\n案場：'+p.name];
-    (p.tasks||[]).forEach(function(t){lines.push('\n▍'+t.name+'（'+t.startDate+' ~ '+t.endDate+'，狀態：'+statusLabel(t.status)+'）');(t.reports||[]).forEach(function(r){lines.push('  ['+r.date+'|'+r.reporter+'] '+r.title+'：'+r.content);});if(!(t.reports&&t.reports.length))lines.push('  （無回報）');});
-    fetch(GEMINI_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:lines.join('\n')}]}]})}).then(function(r){return r.json();}).then(function(json){
-      var text=json.candidates&&json.candidates[0]&&json.candidates[0].content&&json.candidates[0].content.parts[0].text;
-      if(text){var upd=Object.assign({},p,{aiAnalysis:text});updateLocalProject(upd);saveProjectToGAS(upd);}
-      if(loadEl)loadEl.style.display='none';if(resEl){resEl.style.display='block';resEl.textContent=text||'分析失敗';}
-    }).catch(function(){if(loadEl)loadEl.style.display='none';if(resEl){resEl.style.display='block';resEl.textContent='分析失敗，請重試。';}});
+    // 呼叫 GAS 後端執行 Gemini 分析（API Key 在後端，不暴露）
+    callGAS('geminiAnalysis',p).then(function(result){
+      var text=result&&result.text?result.text:'分析失敗，請重試';
+      if(result&&result.success&&result.text){
+        var upd=Object.assign({},p,{aiAnalysis:result.text});
+        updateLocalProject(upd);saveProjectToGAS(upd);
+      }
+      if(loadEl)loadEl.style.display='none';
+      if(resEl){resEl.style.display='block';resEl.textContent=text;}
+    }).catch(function(){
+      if(loadEl)loadEl.style.display='none';
+      if(resEl){resEl.style.display='block';resEl.textContent='分析失敗，請重試。';}
+    });
   });
 
   // 開工日、開幕日、圍籬日即時儲存（日期連動）
