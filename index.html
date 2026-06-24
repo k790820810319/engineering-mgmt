@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工程進度管理系統</title>
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1e293b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="工程管理">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f8;color:#1e293b;min-height:100vh;font-size:17px}
+button{cursor:pointer;border:none;background:none;font-family:inherit;font-size:inherit}
+input,select,textarea{font-family:inherit}
+.topbar{background:#1e293b;color:#fff;padding:0 28px;height:64px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.topbar-logo{font-size:24px}.topbar-title{font-size:19px;font-weight:700}.topbar-sub{font-size:14px;color:#94a3b8;margin-left:4px}.spacer{flex:1}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:11px 22px;border-radius:9px;font-size:15px;font-weight:500;transition:all .15s;cursor:pointer;border:none;line-height:1}
+.btn-primary{background:#2563eb;color:#fff}.btn-primary:hover{background:#1d4ed8}
+.btn-success{background:#059669;color:#fff}.btn-success:hover{background:#047857}
+.btn-secondary{background:#fff;color:#374151;border:1.5px solid #e2e8f0}.btn-secondary:hover{background:#f8fafc}
+.btn-danger{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}.btn-danger:hover{background:#fee2e2}
+.btn-ghost{color:#64748b;padding:7px 12px;border-radius:8px}.btn-ghost:hover{background:#f1f5f9;color:#1e293b}
+.btn-purple{background:#7c3aed;color:#fff}.btn-purple:hover{background:#6d28d9}
+.btn-sm{padding:6px 13px;font-size:13px}
+.btn-icon{width:34px;height:34px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px}
+
+/* Dashboard layout */
+.dash-layout{max-width:1600px;margin:0 auto;padding:20px;display:grid;grid-template-columns:1fr 480px;gap:24px;align-items:start}
+.content{max-width:1100px;margin:0 auto;padding:24px 20px}
+.btn-sm{padding:7px 15px;font-size:13px}
+.btn-icon{width:36px;height:36px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px}
+
+/* Calendar */
+.cal-wrap{background:#fff;border-radius:14px;border:1.5px solid #e2e8f0;overflow:hidden;margin-bottom:20px}
+.cal-header{display:flex;align-items:center;padding:13px 16px;border-bottom:1px solid #f1f5f9;background:#fafafa;gap:8px}
+.cal-title{font-size:16px;font-weight:700;flex:1;color:#1e293b}
+.cal-nav{background:transparent;border:none;cursor:pointer;color:#64748b;font-size:18px;padding:4px 10px;border-radius:6px}
+.cal-nav:hover{background:#f1f5f9}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);min-width:0}
+.cal-dow{font-size:12px;font-weight:700;color:#94a3b8;text-align:center;padding:7px 0;background:#fafafa;border-bottom:1px solid #f1f5f9}
+.cal-day{min-height:78px;border-right:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;padding:3px;position:relative;vertical-align:top;min-width:0;overflow:hidden}
+.cal-day:nth-child(7n){border-right:none}
+.cal-day-num{font-size:12px;font-weight:600;color:#475569;margin-bottom:2px;padding:1px 3px}
+.cal-day.today .cal-day-num{background:#2563eb;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.cal-day.other-month .cal-day-num{color:#cbd5e1}
+.cal-day.other-month{background:#fafafa}
+.cal-event{font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.6;display:block}
+
+/* Sections */
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:13px 18px;border-radius:12px;cursor:pointer;transition:background .15s;user-select:none}
+.section-header:hover{background:rgba(0,0,0,.03)}
+.section-icon{font-size:20px}.section-title{font-size:17px;font-weight:700;flex:1}.section-count{font-size:14px;font-weight:600;padding:3px 11px;border-radius:99px}.section-arrow{font-size:14px;color:#94a3b8;transition:transform .2s}.section-arrow.open{transform:rotate(90deg)}
+.sec-planned .section-header{background:#fefce8;border:1.5px solid #fde68a}.sec-planned .section-title{color:#92400e}.sec-planned .section-count{background:#fde68a;color:#78350f}
+.sec-active .section-header{background:#eff6ff;border:1.5px solid #bfdbfe}.sec-active .section-title{color:#1e40af}.sec-active .section-count{background:#bfdbfe;color:#1e3a8a}
+.sec-done .section-header{background:#f0fdf4;border:1.5px solid #bbf7d0}.sec-done .section-title{color:#14532d}.sec-done .section-count{background:#bbf7d0;color:#14532d}
+.section-body{margin-bottom:20px}
+
+/* Project cards */
+.planned-grid,.done-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;padding:0 4px}
+.planned-card{background:#fff;border:1.5px solid #fde68a;border-radius:12px;padding:16px;cursor:pointer;transition:all .15s}
+.planned-card:hover{border-color:#f59e0b;box-shadow:0 4px 12px rgba(245,158,11,.15)}
+.active-list{display:flex;flex-direction:column;gap:12px;padding:0 4px}
+.active-card{background:#fff;border:2px solid #3b82f6;border-radius:14px;padding:18px;cursor:pointer;transition:all .15s;box-shadow:0 2px 8px rgba(59,130,246,.08)}
+.active-card:hover{border-color:#2563eb;box-shadow:0 4px 16px rgba(59,130,246,.15)}
+.done-card{background:#fff;border:1.5px solid #bbf7d0;border-radius:12px;padding:16px;cursor:pointer;transition:all .15s;opacity:.85}
+.done-card:hover{border-color:#22c55e;opacity:1}
+.card-name{font-size:16px;font-weight:700;color:#1e293b;margin-bottom:5px}
+.card-meta{font-size:13px;color:#64748b;margin-bottom:2px}
+.card-meta.hl{color:#7c3aed;font-weight:600;font-size:13px}
+.card-del{background:transparent;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:2px;border-radius:4px;line-height:1;transition:color .15s}
+.card-del:hover{color:#ef4444}
+.progress-bar{height:9px;background:#e2e8f0;border-radius:99px;overflow:hidden;flex:1}
+.progress-fill{height:100%;border-radius:99px;background:#3b82f6;transition:width .4s}
+.progress-fill.full{background:#16a34a}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+.badge-blue{background:#dbeafe;color:#1d4ed8}.badge-green{background:#dcfce7;color:#15803d}.badge-yellow{background:#fef9c3;color:#854d0e}.badge-gray{background:#f1f5f9;color:#64748b}.badge-purple{background:#ede9fe;color:#6d28d9}
+.empty-mini{text-align:center;padding:26px;color:#94a3b8;font-size:14px;background:#f8fafc;border-radius:10px;border:1.5px dashed #e2e8f0}
+
+/* Stats */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat-box{background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px 18px}
+.stat-val{font-size:22px;font-weight:800;color:#1e293b}.stat-lbl{font-size:12px;color:#64748b;margin-top:3px;font-weight:500}
+
+/* Task table */
+.task-table{width:100%;border-collapse:collapse}
+.task-table th{font-size:12px;font-weight:700;color:#64748b;text-align:left;padding:10px 12px;border-bottom:2px solid #e2e8f0;background:#f8fafc;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.task-table td{padding:0;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.task-table tbody tr:hover{background:#f8fafc}
+.task-table tbody tr.drag-over{background:#eff6ff;outline:2px dashed #3b82f6;outline-offset:-2px}
+.task-table tbody tr.done-row{opacity:.6}
+.task-cell{padding:10px 12px}
+.task-name{font-size:14px;font-weight:600;color:#1e293b}
+.drag-handle{color:#cbd5e1;font-size:15px;user-select:none;cursor:grab;padding:10px 8px;display:block}
+.drag-handle:active{cursor:grabbing}
+.status-select{font-size:13px;padding:5px 8px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#475569;cursor:pointer;min-width:90px}
+.status-select:focus{outline:none;border-color:#3b82f6}
+
+/* Form */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:14px;font-weight:600;color:#374151;margin-bottom:5px}
+.form-input{width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:15px;transition:border-color .15s;color:#1e293b;background:#fff}
+.form-input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+textarea.form-input{resize:vertical;min-height:90px}
+.form-error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;color:#dc2626;font-size:14px;margin-bottom:12px}
+.section-lbl{font-size:12px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin:12px 0 7px}
+
+/* Edit-tasks modal task row */
+.etask-row{display:flex;align-items:center;gap:7px;padding:9px 11px;border-bottom:1px solid #f1f5f9;background:#fff;min-height:46px}
+.etask-row:last-child{border-bottom:none}
+.etask-row.drag-over-row{background:#eff6ff}
+.date-mini{font-size:13px;padding:4px 7px;border:1.5px solid #d1d5db;border-radius:6px;color:#1e293b;background:#fff;width:112px}
+.date-mini:focus{outline:none;border-color:#3b82f6}
+.dur-mini{font-size:13px;padding:4px 7px;border:1.5px solid #d1d5db;border-radius:6px;color:#1e293b;background:#fff;width:54px;text-align:center}
+.dur-mini:focus{outline:none;border-color:#3b82f6}
+.mode-toggle{display:flex;align-items:center;gap:3px;font-size:11px;background:#f1f5f9;border-radius:6px;padding:2px;flex-shrink:0}
+.mode-btn{font-size:11px;padding:2px 7px;border-radius:4px;cursor:pointer;border:none;background:transparent;color:#64748b;font-weight:500;white-space:nowrap}
+.mode-btn.active{background:#fff;color:#2563eb;box-shadow:0 1px 2px rgba(0,0,0,.1);font-weight:600}
+.task-list-box{border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:10px}
+.add-row{display:flex;gap:8px;align-items:center;padding:9px 11px;background:#f8fafc;border-top:1.5px solid #e2e8f0}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:28px 16px;overflow-y:auto}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:560px;box-shadow:0 24px 64px rgba(0,0,0,.2)}
+.modal-lg{max-width:720px}
+.modal-header{padding:18px 22px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:8px}
+.modal-title{font-size:16px;font-weight:700;flex:1;color:#1e293b}
+.modal-body{padding:20px 22px;max-height:70vh;overflow-y:auto}
+.modal-footer{padding:14px 22px;border-top:1px solid #f1f5f9;display:flex;justify-content:flex-end;gap:10px}
+.dialog-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:center;justify-content:center;padding:16px}
+.dialog{background:#fff;border-radius:14px;padding:24px;max-width:340px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.2)}
+.dialog-title{font-size:16px;font-weight:700;margin-bottom:8px;color:#1e293b}
+.dialog-msg{font-size:15px;color:#64748b;margin-bottom:20px;line-height:1.7}
+.dialog-actions{display:flex;justify-content:flex-end;gap:10px}
+
+/* Report */
+.report-item{padding:11px 13px;background:#f8fafc;border-radius:8px;border:1.5px solid #e2e8f0;cursor:pointer;margin-bottom:7px;transition:all .12s}
+.report-item:hover{background:#f1f5f9;border-color:#cbd5e1}
+.report-title{font-size:14px;font-weight:600;color:#1e293b}
+.report-meta{font-size:12px;color:#94a3b8;margin-top:2px}
+.report-content{font-size:13px;color:#64748b;margin-top:3px;line-height:1.5}
+
+/* AI */
+.ai-box{background:linear-gradient(135deg,#ede9fe,#dbeafe);border:1.5px solid #c4b5fd;border-radius:14px;padding:20px;margin-bottom:18px}
+.ai-result{background:#fff;border-radius:10px;padding:16px;font-size:14px;line-height:1.85;color:#1e293b;white-space:pre-wrap;border:1px solid #e9d5ff}
+.ai-loading{display:flex;align-items:center;gap:10px;color:#6d28d9;font-size:14px;padding:12px 0}
+
+/* Equip sidebar */
+.equip-sidebar{background:#fff;border:1.5px solid #fecdd3;border-radius:14px;overflow:hidden;margin-top:16px}
+.equip-sidebar-header{background:#fff1f5;padding:13px 16px;border-bottom:1.5px solid #fecdd3;display:flex;align-items:center;gap:8px}
+.equip-sidebar-title{font-size:15px;font-weight:700;color:#9f1239;flex:1}
+.equip-section-label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;padding:7px 13px 3px;background:#fafafa;border-bottom:1px solid #f1f5f9}
+.equip-item{padding:10px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:flex-start;gap:9px;cursor:pointer;transition:background .1s}
+.equip-item:hover{background:#f8fafc}
+.equip-item:last-child{border-bottom:none}
+.equip-check{width:16px;height:16px;border:2px solid #d1d5db;border-radius:3px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;transition:all .15s;background:#fff}
+.equip-check.checked{background:#059669;border-color:#059669}
+.equip-check.checked::after{content:'✓';color:#fff;font-size:11px;font-weight:700}
+.equip-info{flex:1;min-width:0}
+.equip-name{font-size:13px;font-weight:600;color:#1e293b;margin-bottom:2px}
+.equip-date{font-size:12px;color:#64748b;line-height:1.5}
+.equip-urgent{color:#dc2626;font-weight:600}.equip-warning{color:#d97706;font-weight:600}
+.equip-ordered-date{font-size:12px;color:#059669;font-weight:500}
+.equip-sidebar-body{max-height:260px;overflow-y:auto}
+.equip-detail-box{background:#fff;border:1.5px solid #fecdd3;border-radius:12px;padding:18px;margin-bottom:18px}
+
+/* Material / Contact rows */
+.mat-row{display:flex;align-items:center;gap:8px;padding:8px 11px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:5px}
+.contact-row{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid #f1f5f9}
+
+.loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.9);z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.spinner{width:38px;height:38px;border:3px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:15px;color:#64748b;font-weight:500}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:11px 22px;border-radius:9px;font-size:15px;z-index:500;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+@media(max-width:900px){.dash-layout{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.stat-row{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modalRoot"></div>
+<div class="toast" id="toast"></div>
+<script>
+var GEMINI_API_KEY='AQ.Ab8RN6L7ZGsPvtO14RAOiqery2kTYtBfPluEUqpMxUx7jJP-dQ';
+var GEMINI_URL='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+GEMINI_API_KEY;
+
+// ── GAS Web App URL（部署後填入）────────────────────
+var GAS_URL='https://script.google.com/macros/s/AKfycbxJdwVe6XYu6WsiUBX_awsIcRtp2_sz7YM392gCTNUZrpCKARHPuhWieA4WHSDBz02X/exec';
+
+function callGAS(action,payload){
+  return fetch(GAS_URL+'?action='+encodeURIComponent(action)+'&payload='+encodeURIComponent(JSON.stringify(payload||{})),{
+    method:'GET',
+    mode:'cors'
+  }).then(function(r){return r.json();});
+}
+
+// ── PWA Service Worker 註冊 ──────────────────────────
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('/sw.js').catch(function(e){console.log('SW 註冊失敗:',e);});
+  });
+}
+
+// 12 顏色給不同案場
+var PROJECT_COLORS=['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1','#14b8a6','#e11d48'];
+
+var state={
+  projects:[],view:'dashboard',selectedId:null,
+  modal:null,modalData:{},loading:false,
+  sections:{planned:true,active:true,done:false},
+  contacts:[],
+  calYear:new Date().getFullYear(),
+  calMonth:new Date().getMonth()
+};
+
+var DEFAULT_TASKS=[
+  {id:'t1', name:'圍籬進場',     dur:2, active:true},
+  {id:'t1b',name:'點交日',       dur:1, active:true},
+  {id:'t2', name:'拆除工程',     dur:2, active:true},
+  {id:'t3', name:'水電工程',     dur:5, active:true},
+  {id:'t4', name:'泥作工程',     dur:3, active:false},
+  {id:'t5', name:'木工工程',     dur:5, active:true},
+  {id:'t6', name:'油漆工程',     dur:3, active:false},
+  {id:'t7', name:'設備進場安裝', dur:3, active:true}
+];
+
+// ── 日期工具 ─────────────────────────────────────
+function skipWknd(s){var d=new Date(s);while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()+1);return d.toISOString().split('T')[0];}
+function addDays(s,n,aw){
+  var d=new Date(s);if(!aw)while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()+1);
+  var i=0;while(i<n-1){d.setDate(d.getDate()+1);if(aw||(d.getDay()!==0&&d.getDay()!==6))i++;}
+  return d.toISOString().split('T')[0];
+}
+function nextWork(s,aw){var d=new Date(s);d.setDate(d.getDate()+1);if(!aw)while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()+1);return d.toISOString().split('T')[0];}
+function fmt(s){if(!s)return'—';var p=s.split('-');return p[1]+'/'+p[2];}
+function uid(){return 'id_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);}
+function todayStr(){return new Date().toISOString().split('T')[0];}
+function isFuture(s){return s&&s>todayStr();}
+function daysDiff(a,b){return Math.round((new Date(a)-new Date(b))/(86400000));}
+function ymd(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
+function daysInMonth(y,m){return new Date(y,m+1,0).getDate();}
+
+// 重新串接天數模式的工程（跳過 isDateBased 的）
+function recalcFrom(tasks,aw,anchor){
+  var cur=anchor;
+  return tasks.map(function(t){
+    if(t.isDateBased)return t;
+    if(!cur)cur=t.startDate||todayStr();
+    if(aw===false)cur=skipWknd(cur);
+    var end=addDays(cur,t.duration||1,aw);
+    var r=Object.assign({},t,{startDate:cur,endDate:end});
+    cur=nextWork(end,aw);
+    return r;
+  });
+}
+
+// 正式開幕日期永遠排最後，其他依 endDate 排序
+function sortByEnd(tasks){
+  var last=tasks.filter(function(t){return t.name==='正式開幕日期';});
+  var rest=tasks.filter(function(t){return t.name!=='正式開幕日期';});
+  rest.sort(function(a,b){var ae=a.endDate||'',be=b.endDate||'';return ae>be?1:ae<be?-1:0;});
+  return rest.concat(last);
+}
+
+// 叫貨
+function getEquipTask(p){return(p.tasks||[]).find(function(t){return t.name==='設備進場安裝';});}
+function getEquipInstall(p){var t=getEquipTask(p);return t?t.startDate:null;}
+function getEquipOrder(p){var d=getEquipInstall(p);if(!d)return null;var dt=new Date(d);dt.setDate(dt.getDate()-42);return dt.toISOString().split('T')[0];}
+function equipStatus(p){
+  if(p.status==='completed')return null;
+  if(p.equipOrdered)return'ordered';
+  var od=getEquipOrder(p);if(!od)return null;
+  var diff=daysDiff(od,todayStr());
+  return diff<0?'urgent':diff<=7?'warning':'pending';
+}
+
+// 案場分類
+function doneCount(tasks){return(tasks||[]).filter(function(t){return t.status==='done';}).length;}
+function reportCount(tasks){return(tasks||[]).reduce(function(s,t){return s+(t.reports?t.reports.length:0);},0);}
+function totalProgress(tasks){if(!tasks||!tasks.length)return 0;return Math.round(doneCount(tasks)/tasks.length*100);}
+function statusLabel(s){return{pending:'待開始',active:'進行中',done:'完成',paused:'暫停'}[s]||s;}
+function statusBadgeClass(s){return{pending:'badge-gray',active:'badge-blue',done:'badge-green',paused:'badge-yellow'}[s]||'badge-gray';}
+function projCat(p){if(p.status==='completed')return'done';return isFuture(p.tasks&&p.tasks[0]?p.tasks[0].startDate:'')?'planned':'active';}
+
+// 依正式開幕日排序
+function sortByOpening(list){
+  return list.slice().sort(function(a,b){
+    var ao=a.openingDate||'9999',bo=b.openingDate||'9999';
+    return ao>bo?1:ao<bo?-1:0;
+  });
+}
+
+// 取案場縮名（前2字）
+function shortName(p){return p.name.slice(0,4);}
+
+// 取案場顏色
+function projColor(p){
+  var idx=state.projects.indexOf(p);
+  if(idx<0)idx=state.projects.findIndex(function(x){return x.id===p.id;});
+  return PROJECT_COLORS[idx%PROJECT_COLORS.length]||'#3b82f6';
+}
+
+function qs(sel){return document.querySelector(sel);}
+function qsa(sel){return Array.from(document.querySelectorAll(sel));}
+function on(sel,evt,fn){var el=qs(sel);if(el)el.addEventListener(evt,fn);}
+function onAll(sel,evt,fn){qsa(sel).forEach(function(el){el.addEventListener(evt,fn);});}
+function setState(patch){Object.assign(state,patch);render();}
+function showLoading(msg){setState({loading:msg||'處理中…'});}
+function hideLoading(){setState({loading:false});}
+function showToast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},2400);}
+
+// ── Calendar ─────────────────────────────────────
+function renderCalendar(){
+  var y=state.calYear,m=state.calMonth;
+  var today=todayStr();
+  var firstDay=new Date(y,m,1).getDay(); // 0=Sun
+  var days=daysInMonth(y,m);
+  var prevDays=daysInMonth(y,m-1);
+
+  // 蒐集當月所有工程事件
+  // events[dateStr] = [{name, color, taskName}]
+  var events={};
+  state.projects.forEach(function(p){
+    var color=projColor(p);
+    var sn=shortName(p);
+    (p.tasks||[]).forEach(function(t){
+      if(!t.startDate||!t.endDate)return;
+      var cur=new Date(t.startDate);
+      var end=new Date(t.endDate);
+      while(cur<=end){
+        var ds=cur.toISOString().split('T')[0];
+        var dm=parseInt(ds.split('-')[1])-1;
+        if(dm===m){
+          if(!events[ds])events[ds]=[];
+          events[ds].push({label:sn+'-'+t.name.slice(0,4),color:color,pid:p.id});
+        }
+        cur.setDate(cur.getDate()+1);
+      }
+    });
+  });
+
+  var monthNames=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  var dowNames=['日','一','二','三','四','五','六'];
+
+  var dows=dowNames.map(function(d){return '<div class="cal-dow">'+d+'</div>';}).join('');
+
+  var cells='';
+  // 前補空格
+  for(var i=0;i<firstDay;i++){
+    var pd=prevDays-firstDay+i+1;
+    cells+='<div class="cal-day other-month"><div class="cal-day-num">'+pd+'</div></div>';
+  }
+  for(var d=1;d<=days;d++){
+    var ds=ymd(y,m,d);
+    var isToday=ds===today;
+    var evs=events[ds]||[];
+    var evHtml=evs.slice(0,3).map(function(e){
+      return '<div class="cal-event" style="background:'+e.color+'22;color:'+e.color+';border-left:2px solid '+e.color+'" data-pid="'+e.pid+'" title="'+e.label+'">'+e.label+'</div>';
+    }).join('');
+    if(evs.length>3)evHtml+='<div style="font-size:9px;color:#94a3b8">+'+( evs.length-3)+' 更多</div>';
+    cells+='<div class="cal-day'+(isToday?' today':'')+'"><div class="cal-day-num">'+d+'</div>'+evHtml+'</div>';
+  }
+  // 補尾
+  var total=firstDay+days;var remain=(7-total%7)%7;
+  for(var i=1;i<=remain;i++){cells+='<div class="cal-day other-month"><div class="cal-day-num">'+i+'</div></div>';}
+
+  return '<div class="cal-wrap">'
+    +'<div class="cal-header">'
+    +'<button class="cal-nav" id="calPrev">‹</button>'
+    +'<span class="cal-title">'+y+' 年 '+monthNames[m]+'</span>'
+    +'<button class="cal-nav" id="calNext">›</button>'
+    +'</div>'
+    +'<div class="cal-grid">'+dows+cells+'</div>'
+    +'</div>';
+}
+
+// ── Equip sidebar ─────────────────────────────────
+function renderEquipSidebar(){
+  var nonDone=state.projects.filter(function(p){return projCat(p)!=='done';});
+  var ordered=nonDone.filter(function(p){return equipStatus(p)==='ordered';});
+  var urgent =nonDone.filter(function(p){return equipStatus(p)==='urgent';});
+  var warning =nonDone.filter(function(p){return equipStatus(p)==='warning';});
+  var pending =nonDone.filter(function(p){return equipStatus(p)==='pending';});
+  pending.sort(function(a,b){var ae=a.tasks&&a.tasks.length?a.tasks[a.tasks.length-1].endDate:'',be=b.tasks&&b.tasks.length?b.tasks[b.tasks.length-1].endDate:'';return ae>be?1:ae<be?-1:0;});
+  function card(p,st){
+    var od=getEquipOrder(p),ins=getEquipInstall(p);
+    var diff=od?daysDiff(od,todayStr()):null;
+    var isOrdered=st==='ordered';
+    return '<div class="equip-item" data-pid="'+p.id+'">'
+      +'<div class="equip-check'+(isOrdered?' checked':'')+'" onclick="event.stopPropagation();toggleOrdered(\''+p.id+'\')" title="標記叫貨"></div>'
+      +'<div class="equip-info"><div class="equip-name">'+p.name+'</div>'
+      +(isOrdered?'<div class="equip-ordered-date">✓ 已叫貨'+(p.equipOrderedDate?' · '+p.equipOrderedDate:'')+'</div>'
+        :'<div class="equip-date">'+(ins?'📦 '+ins+'<br>':'')
+          +(od?'🛒 <span class="'+(st==='urgent'?'equip-urgent':st==='warning'?'equip-warning':'')+'">'
+            +od+(diff!==null?(diff<0?' (過'+Math.abs(diff)+'天)':diff===0?' (今天)':' (剩'+diff+'天)'):'')+'</span>':'')
+          +'</div>')
+      +'</div></div>';
+  }
+  var body='';
+  if(urgent.length||warning.length){body+='<div class="equip-section-label">🔴 需叫貨 ('+(urgent.length+warning.length)+')</div>';urgent.forEach(function(p){body+=card(p,'urgent');});warning.forEach(function(p){body+=card(p,'warning');});}
+  if(pending.length){body+='<div class="equip-section-label">📋 未叫貨 ('+pending.length+'，依完工日)</div>';pending.forEach(function(p){body+=card(p,'pending');});}
+  if(ordered.length){body+='<div class="equip-section-label">✅ 已叫貨 ('+ordered.length+')</div>';ordered.forEach(function(p){body+=card(p,'ordered');});}
+  if(!body)body='<div class="empty-mini" style="margin:10px;font-size:12px">目前沒有叫貨提醒</div>';
+  var uc=urgent.length,wc=warning.length;
+  return '<div class="equip-sidebar">'
+    +'<div class="equip-sidebar-header"><span style="font-size:17px">📦</span><span class="equip-sidebar-title">設備叫貨提醒</span>'
+    +(uc?'<span class="badge" style="background:#fee2e2;color:#dc2626;font-size:11px">🔴'+uc+'</span>':'')
+    +(wc?'<span class="badge badge-yellow" style="font-size:11px">🟡'+wc+'</span>':'')
+    +'</div><div class="equip-sidebar-body">'+body+'</div></div>';
+}
+
+// ── Dashboard ────────────────────────────────────
+function renderDashboard(){
+  var planned=sortByOpening(state.projects.filter(function(p){return projCat(p)==='planned';}));
+  var active =sortByOpening(state.projects.filter(function(p){return projCat(p)==='active';}));
+  var done   =sortByOpening(state.projects.filter(function(p){return projCat(p)==='done';}));
+  var so=state.sections;
+  var topbar='<div class="topbar"><span class="topbar-logo">🏗</span><span class="topbar-title">工程進度管理系統</span><span class="topbar-sub">共 '+state.projects.length+' 個案場</span><div class="spacer"></div><button class="btn btn-ghost btn-sm" id="btnContacts" style="color:#e2e8f0;margin-right:6px">👥 聯絡人</button><button class="btn btn-primary btn-sm" id="btnNew">＋ 新增案場</button></div>';
+  function delBtn(pid){return '<button class="card-del del-project" data-pid="'+pid+'" onclick="event.stopPropagation()">✕</button>';}
+  function cardDates(p){
+    var html='';
+    if(p.startWorkDate)html+='<div class="card-meta">🔨 開工日：<strong>'+p.startWorkDate+'</strong></div>';
+    if(p.fenceDate)html+='<div class="card-meta">🔒 圍籬：'+p.fenceDate+'</div>';
+    if(p.openingDate)html+='<div class="card-meta hl">🎉 正式開幕：'+p.openingDate+'</div>';
+    return html;
+  }
+
+  var plannedHtml='',activeHtml='',doneHtml='';
+  if(so.planned){plannedHtml=!planned.length?'<div class="empty-mini">尚無預計案場</div>':'<div class="planned-grid">'+planned.map(function(p){return'<div class="planned-card" data-pid="'+p.id+'"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="card-name">'+p.name+'</div>'+delBtn(p.id)+'</div>'+cardDates(p)+'<div class="card-meta" style="margin-top:4px">'+p.tasks.length+' 個工程</div><div style="margin-top:7px"><span class="badge badge-yellow">預計中</span></div></div>';}).join('')+'</div>';}
+  if(so.active){activeHtml=!active.length?'<div class="empty-mini">目前沒有進行中的案場</div>':'<div class="active-list">'+active.map(function(p){var prog=totalProgress(p.tasks),dc=doneCount(p.tasks),rc=reportCount(p.tasks),ip=(p.tasks||[]).filter(function(t){return t.status==='active';}).length;return'<div class="active-card" data-pid="'+p.id+'"><div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px"><div><div style="font-size:17px;font-weight:800;color:#1e293b">'+p.name+'</div>'+cardDates(p)+'</div>'+delBtn(p.id)+'</div><div style="display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap"><span style="font-size:12px;color:#475569">✅ 完成 '+dc+'/'+p.tasks.length+'</span>'+(ip?'<span style="font-size:12px;color:#475569">🔨 進行中 '+ip+'</span>':'')+(rc?'<span style="font-size:12px;color:#475569">📋 '+rc+' 則</span>':'')+'</div><div style="display:flex;align-items:center;gap:10px"><div class="progress-bar"><div class="progress-fill'+(prog===100?' full':'')+'" style="width:'+prog+'%"></div></div><span style="font-size:14px;font-weight:700;color:#1e293b;min-width:36px;text-align:right">'+prog+'%</span></div></div>';}).join('')+'</div>';}
+  if(so.done){doneHtml=!done.length?'<div class="empty-mini">尚無結案案場</div>':'<div class="done-grid">'+done.map(function(p){var rc=reportCount(p.tasks);return'<div class="done-card" data-pid="'+p.id+'"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="card-name">'+p.name+'</div>'+delBtn(p.id)+'</div>'+cardDates(p)+'<div class="card-meta">'+p.tasks.length+' 個工程'+(rc?' · 📋 '+rc:'')+'</div><div style="margin-top:7px;display:flex;gap:5px;flex-wrap:wrap"><span class="badge badge-green">已結案</span>'+(p.aiAnalysis?'<span class="badge badge-purple">✨ 已分析</span>':'')+'</div></div>';}).join('')+'</div>';}
+
+  var leftCol='<div>'
+    +'<div class="section-body sec-active"><div class="section-header" id="secToggleActive"><span class="section-icon">🔨</span><span class="section-title">進行中案場</span><span class="section-count">'+active.length+' 場</span><span class="section-arrow'+(so.active?' open':'')+'">▶</span></div>'+(so.active?activeHtml:'')+'</div>'
+    +'<div class="section-body sec-planned"><div class="section-header" id="secTogglePlanned"><span class="section-icon">📋</span><span class="section-title">預計案場</span><span class="section-count">'+planned.length+' 場</span><span class="section-arrow'+(so.planned?' open':'')+'">▶</span></div>'+(so.planned?plannedHtml:'')+'</div>'
+    +'<div class="section-body sec-done"><div class="section-header" id="secToggleDone"><span class="section-icon">✅</span><span class="section-title">結案案場</span><span class="section-count">'+done.length+' 場</span><span class="section-arrow'+(so.done?' open':'')+'">▶</span></div>'+(so.done?doneHtml:'')+'</div>'
+    +'</div>';
+
+  var rightCol='<div style="position:sticky;top:76px">'+renderCalendar()+renderEquipSidebar()+'</div>';
+  return topbar+'<div class="dash-layout">'+leftCol+rightCol+'</div>';
+}
+
+// ── Detail ───────────────────────────────────────
+function renderDetail(){
+  var p=state.projects.find(function(x){return x.id===state.selectedId;});if(!p)return'';
+  var prog=totalProgress(p.tasks),dc=doneCount(p.tasks);
+  var cat=projCat(p),isCompleted=(cat==='done');
+  var hasTasks=(p.tasks&&p.tasks.length>0);
+
+  var topbar='<div class="topbar"><button class="btn btn-ghost" id="btnBack" style="color:#94a3b8;padding:6px 10px">← 返回</button><span style="color:#475569;margin:0 6px">|</span><span style="font-size:16px;font-weight:700">'+p.name+'</span>'+(cat==='planned'?'<span class="badge badge-yellow" style="margin-left:8px">預計</span>':'')+(cat==='active'?'<span class="badge badge-blue" style="margin-left:8px">進行中</span>':'')+(cat==='done'?'<span class="badge badge-green" style="margin-left:8px">已結案</span>':'')+'<div class="spacer"></div>'+(isCompleted?'':'<button class="btn btn-success btn-sm" id="btnCloseProject">✓ 申請結案</button>&nbsp;')+'<button class="btn btn-ghost btn-sm" id="btnDelProject" style="color:#ef4444">刪除案場</button></div>';
+
+  var stats='<div class="stat-row"><div class="stat-box"><div class="stat-val">'+prog+'%</div><div class="stat-lbl">整體進度</div></div><div class="stat-box"><div class="stat-val">'+dc+'/'+p.tasks.length+'</div><div class="stat-lbl">完成工程</div></div><div class="stat-box"><div class="stat-val" style="font-size:14px">'+(p.startWorkDate||'—')+'</div><div class="stat-lbl">🔨 開工日</div></div><div class="stat-box"><div class="stat-val" style="font-size:14px;color:#7c3aed">'+(p.openingDate||'—')+'</div><div class="stat-lbl">🎉 正式開幕</div></div></div>';
+
+  // 案場設定列（開工日、開幕日、圍籬日、排程）
+  var dateCtrl='<div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end">'
+    +'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px;font-weight:600;color:#374151">🔨 開工日</span><input type="date" id="editStartWork" class="form-input" style="width:148px;padding:5px 9px;font-size:12px" value="'+(p.startWorkDate||'')+'" '+(isCompleted?'disabled':'')+'></div>'
+    +'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px;font-weight:600;color:#7c3aed">🎉 正式開幕</span><input type="date" id="editOpeningDate" class="form-input" style="width:148px;padding:5px 9px;font-size:12px" value="'+(p.openingDate||'')+'" '+(isCompleted?'disabled':'')+'></div>'
+    +'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px;font-weight:600;color:#475569">🔒 圍籬進場</span><input type="date" id="editFenceDate" class="form-input" style="width:148px;padding:5px 9px;font-size:12px" value="'+(p.fenceDate||'')+'" '+(isCompleted?'disabled':'')+'></div>'
+    +'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px;color:#64748b">排程</span><select id="allowWeekendSelect" class="form-input" style="width:auto;padding:5px 9px;font-size:12px" '+(isCompleted?'disabled':'')+'><option value="true"'+(p.allowWeekend?' selected':'')+'>含假日</option><option value="false"'+(!p.allowWeekend?' selected':'')+'>排除假日</option></select></div>'
+    +'</div>';
+
+  // 叫貨提醒
+  var od=getEquipOrder(p),ins=getEquipInstall(p);
+  var equipHtml='';
+  if(od&&!isCompleted){
+    var diff=daysDiff(od,todayStr()),st=equipStatus(p);
+    var stText='';
+    if(st==='ordered')stText='<span style="color:#059669;font-weight:600">✅ 已叫貨'+(p.equipOrderedDate?' · '+p.equipOrderedDate:'')+'</span>';
+    else if(diff<0)stText='<span style="color:#dc2626;font-weight:600">🔴 叫貨日已過 '+Math.abs(diff)+' 天！</span>';
+    else if(diff===0)stText='<span style="color:#dc2626;font-weight:600">🔴 今天就是叫貨日！</span>';
+    else if(diff<=7)stText='<span style="color:#d97706;font-weight:600">🟡 還有 '+diff+' 天</span>';
+    else stText='<span style="color:#475569">還有 '+diff+' 天</span>';
+    equipHtml='<div class="equip-detail-box"><div style="display:flex;align-items:center;gap:7px;margin-bottom:10px"><span style="font-size:16px">📦</span><span style="font-size:13px;font-weight:700;color:#9f1239;flex:1">設備叫貨提醒</span></div><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div style="font-size:12px;line-height:1.9">'+(ins?'📦 設備進場：<strong>'+ins+'</strong><br>':'')+'🛒 建議叫貨日：<strong>'+od+'</strong><br>'+stText+'</div><div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;cursor:pointer" onclick="toggleOrdered(\''+p.id+'\')"><div class="equip-check'+(p.equipOrdered?' checked':'')+'" style="width:18px;height:18px"></div>'+(p.equipOrdered?'<span style="color:#059669">已叫貨</span>':'<span style="color:#64748b">標記已叫貨</span>')+'</div></div></div>';
+  }
+
+  // 工程排程表
+  var tableHtml='';
+  if(!hasTasks){
+    tableHtml='<div style="background:#fff;border-radius:14px;border:1.5px solid #e2e8f0;padding:40px;text-align:center;margin-bottom:16px">'
+      +'<div style="font-size:32px;margin-bottom:10px">📋</div>'
+      +'<div style="font-size:15px;font-weight:600;color:#374151;margin-bottom:6px">尚未新增任何工程項目</div>'
+      +'<div style="font-size:13px;color:#64748b;margin-bottom:16px">點下方按鈕開始安排施工排程</div>'
+      +(isCompleted?'':'<button class="btn btn-primary" id="btnEditTasks">＋ 新增工程</button>')
+      +'</div>';
+  } else {
+    var displayTasks=sortByEnd((p.tasks||[]).slice());
+    var rows=displayTasks.map(function(t){
+      var rc=t.reports?t.reports.length:0,cc=t.contacts?t.contacts.length:0,mc=t.materials?t.materials.length:0;
+      var origIdx=(p.tasks||[]).findIndex(function(x){return x.id===t.id;});
+      return '<tr data-idx="'+origIdx+'" data-tid="'+t.id+'" class="task-drag-row'+(t.status==='done'?' done-row':'')+'">'
+        +'<td style="width:28px">'+(isCompleted?'':'<span class="drag-handle">⠿</span>')+'</td>'
+        +'<td><div class="task-cell"><div style="display:flex;align-items:center;gap:5px"><span class="task-name">'+t.name+'</span></div>'+(rc>0?'<div style="font-size:11px;color:#3b82f6;margin-top:1px">📋 '+rc+' 則</div>':'')+'</div></td>'
+        +'<td><div class="task-cell" style="font-size:12px;color:#475569;white-space:nowrap">'+(t.isDateBased?'📅 ':'')+fmt(t.startDate)+' – '+fmt(t.endDate)+'</div></td>'
+        +'<td><div class="task-cell" style="font-size:12px;color:#64748b;text-align:center">'+t.duration+'天</div></td>'
+        +'<td><div class="task-cell">'+(isCompleted?'<span class="badge '+statusBadgeClass(t.status)+'">'+statusLabel(t.status)+'</span>':'<select class="status-select task-status" data-tid="'+t.id+'"><option value="pending"'+(t.status==='pending'?' selected':'')+'>待開始</option><option value="active"'+(t.status==='active'?' selected':'')+'>進行中</option><option value="done"'+(t.status==='done'?' selected':'')+'>完成</option><option value="paused"'+(t.status==='paused'?' selected':'')+'>暫停</option></select>')+'</div></td>'
+        +'<td><div class="task-cell" style="text-align:center"><button class="btn btn-secondary btn-sm btn-task-contacts" data-tid="'+t.id+'" style="font-size:11px;padding:4px 8px">👤 '+(cc>0?cc:'聯絡人')+'</button></div></td>'
+        +'<td><div class="task-cell" style="text-align:center"><button class="btn btn-secondary btn-sm btn-materials" data-tid="'+t.id+'" style="font-size:11px;padding:4px 8px">🧱 '+(mc>0?mc:'材質')+'</button></div></td>'
+        +'<td><div class="task-cell" style="text-align:center"><button class="btn btn-secondary btn-sm btn-report" data-tid="'+t.id+'" style="font-size:11px;padding:4px 8px">📋 '+(rc>0?'('+rc+') ':'')+'回報</button></div></td>'
+        +'</tr>';
+    }).join('');
+    tableHtml='<div style="background:#fff;border-radius:14px;border:1.5px solid #e2e8f0;overflow:hidden;margin-bottom:16px">'
+      +'<div style="padding:12px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;background:#fafafa">'
+      +'<span style="font-size:14px;font-weight:700;flex:1;color:#1e293b">工程排程</span>'
+      +(isCompleted?'':'<button class="btn btn-secondary btn-sm" id="btnEditTasks">✏️ 編輯工程</button>')
+      +'</div><div style="overflow-x:auto"><table class="task-table"><thead><tr><th></th><th>工程項目</th><th>日期</th><th style="text-align:center">天數</th><th>狀態</th><th style="text-align:center">聯絡人</th><th style="text-align:center">材質</th><th style="text-align:center">工程回報</th></tr></thead><tbody id="taskBody">'+rows+'</tbody></table></div></div>';
+  }
+
+  var aiHtml='';
+  if(isCompleted){
+    aiHtml='<div class="ai-box"><div style="display:flex;align-items:center;gap:7px;margin-bottom:10px"><span style="font-size:17px">✨</span><span style="font-size:13px;font-weight:700;color:#4c1d95;flex:1">AI 結案分析（Gemini）</span><button class="btn btn-purple btn-sm" id="btnRunAI">'+(p.aiAnalysis?'重新分析':'開始分析')+'</button></div><div class="ai-loading" id="aiLoading" style="display:none"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div>分析中…</div><div class="ai-result" id="aiResult" style="display:'+(p.aiAnalysis?'block':'none')+'">'+( p.aiAnalysis||'')+'</div></div>';
+  }
+
+  return topbar+'<div class="content">'+stats+dateCtrl+equipHtml+tableHtml+aiHtml
+    +'<div style="margin-top:32px;text-align:center;padding-bottom:24px"><button class="btn btn-ghost btn-sm" id="btnDelProject2" style="color:#94a3b8">🗑 刪除此案場</button></div></div>';
+}
+
+// ── New Project Modal（簡化）─────────────────────
+function renderNewProjectModal(){
+  var md=state.modalData;var err=md.formError||'';
+  return '<div class="modal-overlay" id="modalOverlay"><div class="modal">'
+    +'<div class="modal-header"><span class="modal-title">建立新案場</span><button class="btn btn-ghost btn-icon" id="modalClose">✕</button></div>'
+    +'<div class="modal-body">'
+    +(err?'<div class="form-error">⚠️ '+err+'</div>':'')
+    +'<div class="form-group"><label class="form-label">案場名稱</label><input class="form-input" id="pName" value="'+(md.name||'')+'" placeholder="例：信義區○○住宅"></div>'
+    +'<div class="form-row">'
+    +'<div class="form-group"><label class="form-label">🔨 開工日</label><input type="date" class="form-input" id="pStartWork" value="'+(md.startWorkDate||'')+'" onchange="linkedDate(this,\'pOpeningDate\')"><div style="font-size:11px;color:#94a3b8;margin-top:3px">工班進駐日期</div></div>'
+    +'<div class="form-group"><label class="form-label">🎉 正式開幕日</label><input type="date" class="form-input" id="pOpeningDate" value="'+(md.openingDate||'')+'" onchange="linkedDate(this,\'\')"><div style="font-size:11px;color:#94a3b8;margin-top:3px">對外營業日期</div></div>'
+    +'</div>'
+    +'<div class="form-row">'
+    +'<div class="form-group"><label class="form-label">🔒 圍籬進場日</label><input type="date" class="form-input" id="pFenceDate" value="'+(md.fenceDate||'')+'" onchange="linkedDate(this,\'pStartWork\')"><div style="font-size:11px;color:#94a3b8;margin-top:3px">選填</div></div>'
+    +'<div class="form-group"><label class="form-label">排程設定</label><label style="display:flex;align-items:center;gap:6px;font-size:13px;padding:10px 0;cursor:pointer"><input type="checkbox" id="pWeekend" '+(md.weekend!==false?'checked':'')+' style="width:15px;height:15px;accent-color:#2563eb">包含假日施工</label></div>'
+    +'</div>'
+    +'<div style="background:#eff6ff;border-radius:8px;padding:10px 14px;font-size:12px;color:#1d4ed8;line-height:1.7">💡 建立後進入案場，點「＋ 新增工程」開始安排施工項目。</div>'
+    +'</div>'
+    +'<div class="modal-footer"><button class="btn btn-secondary" id="modalCancel">取消</button><button class="btn btn-primary" id="modalSubmit">建立案場</button></div>'
+    +'</div></div>';
+}
+
+// 日期連動：選完 A，若 B 為空或早於 A，自動設 B = A
+function linkedDate(el,targetId){
+  if(!targetId)return;
+  var target=document.getElementById(targetId);
+  if(!target)return;
+  if(!target.value||target.value<el.value)target.value=el.value;
+  if(state.modalData){
+    var m={'pStartWork':'startWorkDate','pOpeningDate':'openingDate','pFenceDate':'fenceDate'};
+    if(m[el.id])state.modalData[m[el.id]]=el.value;
+    if(m[targetId]&&target.value)state.modalData[m[targetId]]=target.value;
+  }
+}
+
+// ── Edit Tasks Modal（集中管理）─────────────────
+function renderEditTasksModal(){
+  var p=state.projects.find(function(x){return x.id===state.selectedId;});if(!p)return'';
+  var md=state.modalData;
+  var tasks=md.editTasks||p.tasks.slice();
+  var aw=p.allowWeekend!==false;
+  var anchorDate=p.startWorkDate||null;
+
+  // 先計算天數模式的預覽日期（方便顯示）
+  var previewTasks=recalcFrom(tasks,aw,anchorDate||(tasks[0]&&tasks[0].startDate)||todayStr());
+
+  var existNames=tasks.map(function(t){return t.name;});
+  var missing=DEFAULT_TASKS.filter(function(t){return!existNames.includes(t.name);});
+
+  // 排序警告（若儲存後會因 endDate 重排）
+  var orderWarning=md.orderWarning||'';
+
+  var taskRows=tasks.map(function(t,i){
+    var useDate=t.isDateBased||false;
+    // 天數模式：從預覽結果取得計算後日期
+    var prev=previewTasks[i]||t;
+    var previewDateStr=(!useDate&&prev.startDate&&prev.endDate)
+      ?'<span style="font-size:10px;color:#94a3b8;margin-left:4px">'+fmt(prev.startDate)+'~'+fmt(prev.endDate)+'</span>'
+      :'';
+    return '<div class="etask-row" draggable="true" data-eidx="'+i+'">'
+      +'<span class="drag-handle" style="font-size:13px;padding:5px">⠿</span>'
+      +'<span style="font-size:12px;font-weight:600;min-width:72px;flex-shrink:0;color:#374151">'+t.name+'</span>'
+      +'<div class="mode-toggle"><button class="mode-btn'+(useDate?'':' active')+' e-mode-dur" data-eidx="'+i+'">天數</button><button class="mode-btn'+(useDate?' active':'')+' e-mode-date" data-eidx="'+i+'">日期</button></div>'
+      +(useDate
+        // 日期模式：始末日期輸入，結束日期連動
+        ?'<input type="date" class="date-mini e-start" data-eidx="'+i+'" value="'+(t.startDate||'')+'" style="width:100px">'
+          +'<span style="color:#94a3b8;font-size:10px">→</span>'
+          +'<input type="date" class="date-mini e-end" data-eidx="'+i+'" value="'+(t.endDate||'')+'" style="width:100px">'
+        // 天數模式：天數輸入 + 預覽日期
+        :'<input type="number" min="1" class="dur-mini e-dur" data-eidx="'+i+'" value="'+(t.duration||1)+'"><span style="font-size:11px;color:#94a3b8">天</span>'
+          +previewDateStr
+      )
+      +'<button class="btn btn-ghost btn-icon e-del" data-eidx="'+i+'" style="color:#ef4444;width:24px;height:24px;font-size:13px;margin-left:auto">✕</button>'
+      +'</div>';
+  }).join('');
+
+  var missingHtml=missing.length?'<div style="margin-bottom:12px"><div class="form-label" style="font-size:12px;margin-bottom:6px">快速加入預設工程：</div><div style="display:flex;flex-wrap:wrap;gap:6px">'+missing.map(function(t){return '<button class="btn btn-secondary btn-sm e-quick-add" data-name="'+t.name+'" data-dur="'+(t.dur||1)+'" style="font-size:11px;padding:4px 9px">＋ '+t.name+'</button>';}).join('')+'</div></div>':'';
+
+  return '<div class="modal-overlay" id="modalOverlay"><div class="modal modal-lg">'
+    +'<div class="modal-header"><span class="modal-title">✏️ 工程項目管理</span><button class="btn btn-ghost btn-icon" id="modalClose">✕</button></div>'
+    +'<div class="modal-body">'
+    +missingHtml
+    +(orderWarning?'<div style="background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:9px 13px;color:#854d0e;font-size:12px;margin-bottom:10px">⚠️ '+orderWarning+'</div>':'')
+    +'<div style="font-size:12px;color:#64748b;margin-bottom:8px;line-height:1.6">• 拖曳 ⠿ 調整順序。天數模式從案場開工日自動串接（灰色為預覽日期）。<br>• 日期模式填固定日期，不被自動重算；儲存時若結束日期造成順序不一致，系統會自動調整並提示。</div>'
+    +'<div class="task-list-box" id="editTaskList">'+taskRows+'</div>'
+    +'<div class="add-row"><input class="form-input" id="eCustomName" placeholder="新增自訂工程名稱" style="flex:1;font-size:12px;padding:5px 9px"><input type="number" min="1" class="dur-mini" id="eCustomDur" value="1"><span style="font-size:11px;color:#94a3b8">天</span><button class="btn btn-secondary btn-sm" id="eBtnAddCustom" style="font-size:12px">＋ 加入</button></div>'
+    +'</div>'
+    +'<div class="modal-footer"><button class="btn btn-secondary" id="modalCancel">取消</button><button class="btn btn-primary" id="btnSaveEditTasks">儲存排程</button></div>'
+    +'</div></div>';
+}
+
+// 結束日期連動（編輯工程用）
+function syncEEnd(startInput,idx){
+  var val=startInput.value;if(!val)return;
+  var endInput=document.querySelector('.e-end[data-eidx="'+idx+'"]');
+  if(endInput&&(!endInput.value||endInput.value<val))endInput.value=val;
+  if(state.modalData.editTasks){
+    state.modalData.editTasks=state.modalData.editTasks.map(function(t,i){
+      if(i!==idx)return t;
+      var newEnd=t.endDate&&t.endDate>=val?t.endDate:val;
+      return Object.assign({},t,{startDate:val,endDate:newEnd});
+    });
+  }
+}
+
+function renderReportModal(){
+  var md=state.modalData,task=md.task;if(!task)return'';
+  if(md.subview==='view'){var r=(task.reports||[]).find(function(x){return x.id===md.viewId;});if(!r)return'';return'<div class="modal-overlay" id="modalOverlay"><div class="modal"><div class="modal-header"><button class="btn btn-ghost btn-icon" id="reportBack">←</button><span class="modal-title">'+r.title+'</span><button class="btn btn-ghost btn-icon" id="modalClose">✕</button></div><div class="modal-body"><p style="font-size:12px;color:#94a3b8;margin-bottom:10px">'+r.date+' · '+(r.reporter||'未記名')+'</p><div style="font-size:14px;line-height:1.8;white-space:pre-wrap;color:#374151">'+r.content+'</div></div><div class="modal-footer"><button class="btn btn-danger btn-sm" id="btnDelReport" data-rid="'+r.id+'">刪除</button></div></div></div>';}
+  if(md.subview==='add'){return'<div class="modal-overlay" id="modalOverlay"><div class="modal"><div class="modal-header"><button class="btn btn-ghost btn-icon" id="reportBack">←</button><span class="modal-title">新增工程回報</span><button class="btn btn-ghost btn-icon" id="modalClose">✕</button></div><div class="modal-body"><div class="form-group"><label class="form-label">日期</label><input type="date" class="form-input" id="rDate" value="'+todayStr()+'"></div><div class="form-group"><label class="form-label">標題</label><input class="form-input" id="rTitle" placeholder="例：今日完成一樓牆面打底"></div><div class="form-group"><label class="form-label">填寫人</label><input class="form-input" id="rReporter" placeholder="姓名（選填）"></div><div class="form-group"><label class="form-label">內容</label><textarea class="form-input" id="rContent" style="min-height:100px"></textarea></div></div><div class="modal-footer"><button class="btn btn-secondary" id="reportBack2">取消</button><button class="btn btn-primary" id="btnSaveReport">儲存</button></div></div></div>';}
+  var rlist=[].concat(task.reports||[]).reverse();
+  return '<div class="modal-overlay" id="modalOverlay"><div class="modal"><div class="modal-header"><span class="modal-title">'+task.name+' · 回報</span><button class="btn btn-ghost btn-icon" id="modalClose">✕</button></div><div class="modal-body"><button class="btn btn-primary btn-sm" id="btnAddReport" style="margin-bottom:12px">＋ 新增回報</button>'+(!rlist.length?'<div class="empty-mini">尚無回報</div>':rlist.map(function(r){return'<div class="report-item" data-rid="'+r.id+'"><div style="display:flex;justify-content:space-between"><span class="report-title">'+r.title+'</span><span class="report-meta">'+r.date+'</span></div>'+(r.reporter?'<div class="report-meta">by '+r.reporter+'</div>':'')+'<div class="report-content">'+r.content.slice(0,90)+(r.content.length>90?'…':'')+'</div></div>';}).join(''))+'</div><div class="modal-footer"><button class="btn btn-secondary" id="modalClose2">關閉</button></div></div></div>';
+}
+
+function renderContactsModal(){
+  var md=state.modalData,contacts=state.contacts||[],editId=md.editContactId||null;
+  var editC=editId?contacts.find(function(c){return c.id===editId;}):null;
+  var listHtml=!contacts.length?'<div class="empty-mini">尚無聯絡人</div>':contacts.map(function(c){return'<div class="contact-row"><div style="flex:1"><div style="font-size:13px;font-weight:600">'+c.name+'</div>'+(c.phone?'<div style="font-size:11px;color:#64748b">📞 '+c.phone+'</div>':'')+(c.taskScope?'<div style="font-size:11px;color:#7c3aed">🔧 '+c.taskScope+'</div>':'')+'</div><button class="btn btn-ghost btn-sm btn-edit-contact" data-cid="'+c.id+'" style="font-size:12px">✏️</button><button class="btn btn-ghost btn-sm btn-del-contact" data-cid="'+c.id+'" style="font-size:12px;color:#ef4444">✕</button></div>';}).join('');
+  return '<div class="modal-overlay" id="modalOverlay"><div class="modal"><div class="modal-header"><span class="modal-title">👥 聯絡人資料庫</span><button class="btn btn-ghost btn-icon" id="modalClose">✕</button></div><div class="modal-body" style="padding:0;max-height:42vh;overflow-y:auto">'+listHtml+'</div><div style="border-top:1.5px solid #e2e8f0;padding:13px 20px;background:#f8fafc"><div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:9px">'+(editId?'✏️ 編輯':'＋ 新增')+'</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:7px"><div><label class="form-label" style="font-size:11px">姓名</label><input class="form-input" id="cNewName" value="'+(editC?editC.name:'')+'" placeholder="姓名" style="padding:6px 9px;font-size:13px"></div><div><label class="form-label" style="font-size:11px">電話</label><input class="form-input" id="cNewPhone" value="'+(editC?editC.phone:'')+'" placeholder="電話" style="padding:6px 9px;font-size:13px"></div></div><div style="margin-bottom:7px"><label class="form-label" style="font-size:11px">負責工項（選填）</label><input class="form-input" id="cNewTaskScope" value="'+(editC?editC.taskScope||'':'')+'" placeholder="例：水電、木工" style="padding:6px 9px;font-size:13px"></div><div style="display:flex;gap:8px">'+(editId?'<button class="btn btn-ghost btn-sm" id="btnCancelEditContact">取消</button>':'')+'<button class="btn btn-primary btn-sm" id="btnSaveContact" data-edit-id="'+(editId||'')+'">儲存</button></div></div></div></div>';
+}
+
+function renderTaskContactsModal(){
+  var md=state.modalData,p=state.projects.find(function(x){return x.id===state.selectedId;});if(!p)return'';
+  var task=p.tasks.find(function(t){return t.id===md.taskId;});if(!task)return'';
+  var tc=task.contacts||[],all=state.contacts||[];
+  var avail=all.filter(function(c){return!tc.find(function(x){return x.id===c.id;});});
+  return '<div class="modal-overlay" id="modalOverlay"><div class="modal"><div class="modal-header"><span class="modal-title">👤 '+task.name+' · 聯絡人</span><button class="btn btn-ghost btn-icon" id="modalClose">✕</button></div><div class="modal-body"><div class="section-lbl">已指定</div>'+(!tc.length?'<div class="empty-mini" style="margin-bottom:10px">尚未指定</div>':'<div style="margin-bottom:10px">'+tc.map(function(c){return'<div class="mat-row"><div style="flex:1"><div style="font-size:13px;font-weight:600">'+c.name+'</div>'+(c.phone?'<div style="font-size:11px;color:#64748b">📞 '+c.phone+'</div>':'')+'</div><button class="btn btn-ghost btn-sm btn-remove-task-contact" data-cid="'+c.id+'" style="font-size:11px;color:#ef4444">移除</button></div>';}).join('')+'</div>')+'<div class="section-lbl">從資料庫選擇</div>'+(avail.length?'<div style="display:flex;gap:8px;margin-bottom:10px"><select class="form-input" id="tcSelectExisting" style="flex:1;font-size:12px;padding:6px 9px"><option value="">— 選擇 —</option>'+avail.map(function(c){return'<option value="'+c.id+'">'+c.name+(c.phone?' ('+c.phone+')':'')+'</option>';}).join('')+'</select><button class="btn btn-success btn-sm" id="btnAddExistingContact" style="font-size:12px">加入</button></div>':'<div style="font-size:12px;color:#94a3b8;margin-bottom:10px">（資料庫無更多聯絡人）</div>')+'<div style="background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;padding:11px"><div style="font-size:11px;color:#64748b;margin-bottom:7px">快速新增（同時存入資料庫）</div><div style="display:grid;grid-template-columns:1fr 1fr auto;gap:7px;align-items:end"><div><label class="form-label" style="font-size:11px">姓名</label><input class="form-input" id="tcNewName" placeholder="工頭姓名" style="padding:5px 8px;font-size:12px"></div><div><label class="form-label" style="font-size:11px">電話</label><input class="form-input" id="tcNewPhone" placeholder="電話" style="padding:5px 8px;font-size:12px"></div><button class="btn btn-primary btn-sm" id="btnAddNewContact" style="font-size:12px">＋</button></div></div></div><div class="modal-footer"><button class="btn btn-secondary" id="modalClose2">關閉</button></div></div></div>';
+}
+
+function renderMaterialsModal(){
+  var md=state.modalData,p=state.projects.find(function(x){return x.id===state.selectedId;});if(!p)return'';
+  var task=p.tasks.find(function(t){return t.id===md.taskId;});if(!task)return'';
+  var mats=task.materials||[];
+  return '<div class="modal-overlay" id="modalOverlay"><div class="modal"><div class="modal-header"><span class="modal-title">🧱 '+task.name+' · 材質</span><button class="btn btn-ghost btn-icon" id="modalClose">✕</button></div><div class="modal-body">'+(!mats.length?'<div class="empty-mini" style="margin-bottom:10px">尚無材質記錄</div>':'<div style="margin-bottom:10px">'+mats.map(function(m,i){return'<div class="mat-row"><div style="flex:1"><div style="font-size:11px;color:#64748b">'+m.scope+'</div><div style="font-size:13px;font-weight:600">'+m.material+'</div>'+(m.note?'<div style="font-size:11px;color:#94a3b8">'+m.note+'</div>':'')+'</div><button class="btn btn-ghost btn-sm btn-del-material" data-midx="'+i+'" style="font-size:11px;color:#ef4444">✕</button></div>';}).join('')+'</div>')+'<div style="background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;padding:13px"><div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:9px">＋ 新增材質</div><div class="form-row" style="margin-bottom:7px"><div><label class="form-label" style="font-size:11px">適用範圍</label><input class="form-input" id="matScope" placeholder="地面、牆面" style="padding:6px 9px;font-size:12px"></div><div><label class="form-label" style="font-size:11px">材質</label><input class="form-input" id="matMaterial" placeholder="磁磚、PVC" style="padding:6px 9px;font-size:12px"></div></div><div class="form-group"><label class="form-label" style="font-size:11px">備註（選填）</label><input class="form-input" id="matNote" placeholder="品牌、型號" style="padding:6px 9px;font-size:12px"></div><button class="btn btn-primary btn-sm" id="btnAddMaterial" style="width:100%;font-size:12px">加入</button></div></div><div class="modal-footer"><button class="btn btn-secondary" id="modalClose2">關閉</button></div></div></div>';
+}
+
+function renderAlertDialog(){return'<div class="dialog-overlay"><div class="dialog"><div class="dialog-title">提示</div><div class="dialog-msg">'+(state.modalData.msg||'')+'</div><div class="dialog-actions"><button class="btn btn-primary" id="modalClose">確定</button></div></div></div>';}
+function renderConfirmDialog(){return'<div class="dialog-overlay"><div class="dialog"><div class="dialog-title">確認操作</div><div class="dialog-msg">'+(state.modalData.msg||'')+'</div><div class="dialog-actions"><button class="btn btn-secondary" id="modalCancel">取消</button><button class="btn btn-danger" id="modalConfirm">確定</button></div></div></div>';}
+
+// ── Helpers ──────────────────────────────────────
+function closeModal(){setState({modal:null,modalData:{}});}
+function getProject(){return state.projects.find(function(x){return x.id===state.selectedId;});}
+function updateLocalProject(p){setState({projects:state.projects.map(function(x){return x.id===p.id?p:x;})});}
+function saveProjectToGAS(p){callGAS('saveProject',p).catch(function(e){console.error(e);});}
+
+function doDeleteProject(pid){
+  var p=state.projects.find(function(x){return x.id===pid;});
+  setState({modal:'confirm',modalData:{msg:'確定要永久刪除「'+(p?p.name:'')+'」？',onConfirm:function(){
+    closeModal();showLoading('刪除中…');
+    callGAS('deleteProject',{id:pid}).then(function(){setState({projects:state.projects.filter(function(x){return x.id!==pid;}),view:'dashboard',selectedId:null});hideLoading();showToast('案場已刪除');});
+  }}});
+}
+function toggleOrdered(pid){
+  var p=state.projects.find(function(x){return x.id===pid;});if(!p)return;
+  var upd=Object.assign({},p,{equipOrdered:!p.equipOrdered,equipOrderedDate:!p.equipOrdered?todayStr():null});
+  updateLocalProject(upd);saveProjectToGAS(upd);showToast(upd.equipOrdered?'已標記叫貨 ✓':'已取消');
+}
+
+// ── Render ───────────────────────────────────────
+function render(){
+  document.getElementById('app').innerHTML=state.view==='dashboard'?renderDashboard():renderDetail();
+  var mhtml='';
+  if(state.modal==='newProject')mhtml=renderNewProjectModal();
+  else if(state.modal==='editTasks')mhtml=renderEditTasksModal();
+  else if(state.modal==='report')mhtml=renderReportModal();
+  else if(state.modal==='contacts')mhtml=renderContactsModal();
+  else if(state.modal==='taskContacts')mhtml=renderTaskContactsModal();
+  else if(state.modal==='materials')mhtml=renderMaterialsModal();
+  else if(state.modal==='alert')mhtml=renderAlertDialog();
+  else if(state.modal==='confirm')mhtml=renderConfirmDialog();
+  document.getElementById('modalRoot').innerHTML=mhtml;
+  var lo=document.getElementById('loadingOverlay');
+  if(state.loading){if(!lo){lo=document.createElement('div');lo.id='loadingOverlay';lo.className='loading-overlay';document.body.appendChild(lo);}lo.innerHTML='<div class="spinner"></div><div class="loading-text">'+state.loading+'</div>';}else if(lo)lo.remove();
+  bindEvents();
+}
+
+// ── Events ───────────────────────────────────────
+function bindEvents(){
+  on('#secTogglePlanned','click',function(){setState({sections:Object.assign({},state.sections,{planned:!state.sections.planned})});});
+  on('#secToggleActive','click',function(){setState({sections:Object.assign({},state.sections,{active:!state.sections.active})});});
+  on('#secToggleDone','click',function(){setState({sections:Object.assign({},state.sections,{done:!state.sections.done})});});
+  on('#calPrev','click',function(){var m=state.calMonth-1,y=state.calYear;if(m<0){m=11;y--;}setState({calMonth:m,calYear:y});});
+  on('#calNext','click',function(){var m=state.calMonth+1,y=state.calYear;if(m>11){m=0;y++;}setState({calMonth:m,calYear:y});});
+
+  on('#btnContacts','click',function(){setState({modal:'contacts',modalData:{}});});
+  on('#btnNew','click',function(){setState({modal:'newProject',modalData:{formError:''}});});
+
+  onAll('.planned-card,.active-card,.done-card','click',function(e){if(e.target.closest('.card-del'))return;var pid=e.currentTarget.dataset.pid;if(pid)setState({view:'detail',selectedId:pid});});
+  onAll('.del-project','click',function(e){e.stopPropagation();doDeleteProject(e.currentTarget.dataset.pid);});
+  onAll('.equip-item','click',function(e){if(e.target.closest('.equip-check'))return;var pid=e.currentTarget.dataset.pid;if(pid)setState({view:'detail',selectedId:pid});});
+  onAll('.cal-event','click',function(e){var pid=e.currentTarget.dataset.pid;if(pid)setState({view:'detail',selectedId:pid});});
+
+  on('#btnBack','click',function(){setState({view:'dashboard',selectedId:null});});
+  on('#btnDelProject','click',function(){doDeleteProject(state.selectedId);});
+  on('#btnDelProject2','click',function(){doDeleteProject(state.selectedId);});
+  on('#btnCloseProject','click',function(){
+    var p=getProject();
+    setState({modal:'confirm',modalData:{msg:'確定要將「'+p.name+'」結案嗎？',onConfirm:function(){closeModal();var upd=Object.assign({},p,{status:'completed'});updateLocalProject(upd);saveProjectToGAS(upd);showToast('已結案 ✓');}}});
+  });
+  on('#btnRunAI','click',function(){
+    var p=getProject();if(!p)return;
+    var loadEl=qs('#aiLoading'),resEl=qs('#aiResult');
+    if(loadEl)loadEl.style.display='flex';if(resEl)resEl.style.display='none';
+    var lines=['請以繁體中文分析以下工程案場施工紀錄，給出延誤分析和改善建議。\n案場：'+p.name];
+    (p.tasks||[]).forEach(function(t){lines.push('\n▍'+t.name+'（'+t.startDate+' ~ '+t.endDate+'，狀態：'+statusLabel(t.status)+'）');(t.reports||[]).forEach(function(r){lines.push('  ['+r.date+'|'+r.reporter+'] '+r.title+'：'+r.content);});if(!(t.reports&&t.reports.length))lines.push('  （無回報）');});
+    fetch(GEMINI_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:lines.join('\n')}]}]})}).then(function(r){return r.json();}).then(function(json){
+      var text=json.candidates&&json.candidates[0]&&json.candidates[0].content&&json.candidates[0].content.parts[0].text;
+      if(text){var upd=Object.assign({},p,{aiAnalysis:text});updateLocalProject(upd);saveProjectToGAS(upd);}
+      if(loadEl)loadEl.style.display='none';if(resEl){resEl.style.display='block';resEl.textContent=text||'分析失敗';}
+    }).catch(function(){if(loadEl)loadEl.style.display='none';if(resEl){resEl.style.display='block';resEl.textContent='分析失敗，請重試。';}});
+  });
+
+  // 開工日、開幕日、圍籬日即時儲存（日期連動）
+  on('#editStartWork','change',function(e){
+    var p=getProject();if(!p)return;
+    // 連動：若開幕日早於開工日，自動調整
+    var od=qs('#editOpeningDate');if(od&&od.value&&od.value<e.target.value)od.value=e.target.value;
+    var upd=Object.assign({},p,{startWorkDate:e.target.value||null,openingDate:od&&od.value?od.value:p.openingDate});
+    updateLocalProject(upd);saveProjectToGAS(upd);showToast('開工日已更新 ✓');
+  });
+  on('#editOpeningDate','change',function(e){
+    var p=getProject();if(!p)return;
+    // 連動：不能早於開工日
+    var sw=qs('#editStartWork');if(sw&&sw.value&&e.target.value<sw.value)e.target.value=sw.value;
+    var upd=Object.assign({},p,{openingDate:e.target.value||null});
+    updateLocalProject(upd);saveProjectToGAS(upd);showToast('正式開幕日已更新 ✓');
+  });
+  on('#editFenceDate','change',function(e){
+    var p=getProject();if(!p)return;
+    var upd=Object.assign({},p,{fenceDate:e.target.value||null});
+    updateLocalProject(upd);saveProjectToGAS(upd);showToast('圍籬進場日已更新 ✓');
+  });
+  on('#allowWeekendSelect','change',function(e){
+    var p=getProject();if(!p)return;var val=e.target.value==='true';
+    setState({modal:'confirm',modalData:{msg:'修改排程基準將重新計算所有工程日期，確定嗎？',onConfirm:function(){
+      closeModal();var newTasks=recalcFrom(p.tasks,val,p.tasks[0]&&p.tasks[0].startDate);
+      var upd=Object.assign({},p,{allowWeekend:val,tasks:newTasks});updateLocalProject(upd);saveProjectToGAS(upd);showToast('排程已更新 ✓');
+    }}});
+  });
+
+  onAll('.task-status','change',function(e){
+    var tid=e.target.dataset.tid,val=e.target.value;var p=getProject();if(!p)return;
+    var upd=Object.assign({},p,{tasks:p.tasks.map(function(t){return t.id===tid?Object.assign({},t,{status:val}):t;})});
+    updateLocalProject(upd);saveProjectToGAS(upd);
+  });
+
+  // 開啟 Edit Tasks Modal
+  on('#btnEditTasks','click',function(){
+    var p=getProject();if(!p)return;
+    setState({modal:'editTasks',modalData:{editTasks:p.tasks.map(function(t){return Object.assign({},t);})}});
+  });
+
+  // Edit Tasks Modal 事件
+  // 天數/日期切換
+  onAll('.e-mode-date','click',function(e){
+    var idx=parseInt(e.currentTarget.dataset.eidx);
+    if(state.modalData.editTasks)state.modalData.editTasks=state.modalData.editTasks.map(function(t,i){return i===idx?Object.assign({},t,{isDateBased:true}):t;});
+    render();
+  });
+  onAll('.e-mode-dur','click',function(e){
+    var idx=parseInt(e.currentTarget.dataset.eidx);
+    if(state.modalData.editTasks)state.modalData.editTasks=state.modalData.editTasks.map(function(t,i){return i===idx?Object.assign({},t,{isDateBased:false}):t;});
+    render();
+  });
+  // 刪除工程
+  onAll('.e-del','click',function(e){
+    var idx=parseInt(e.currentTarget.dataset.eidx);
+    if(state.modalData.editTasks)state.modalData.editTasks=state.modalData.editTasks.filter(function(_,i){return i!==idx;});
+    render();
+  });
+  // 天數輸入：即時更新，預覽日期重算
+  onAll('.e-dur','input',function(e){
+    var idx=parseInt(e.target.dataset.eidx),val=parseInt(e.target.value);
+    if(val>=1&&state.modalData.editTasks){
+      state.modalData.editTasks=state.modalData.editTasks.map(function(t,i){return i===idx?Object.assign({},t,{duration:val}):t;});
+      render();
+    }
+  });
+  // 日期輸入：始↔末連動 + 自動算天數
+  onAll('.e-start','input',function(e){
+    var idx=parseInt(e.target.dataset.eidx),val=e.target.value;
+    if(!state.modalData.editTasks)return;
+    state.modalData.editTasks=state.modalData.editTasks.map(function(t,i){
+      if(i!==idx)return t;
+      var newEnd=t.endDate&&t.endDate>=val?t.endDate:val;
+      var dur=newEnd?Math.max(1,daysDiff(newEnd,val)+1):(t.duration||1);
+      return Object.assign({},t,{startDate:val,endDate:newEnd,duration:dur});
+    });
+    var task=state.modalData.editTasks[idx];
+    var endInput=document.querySelector('.e-end[data-eidx="'+idx+'"]');
+    if(endInput&&task)endInput.value=task.endDate||'';
+    render();
+  });
+  onAll('.e-end','input',function(e){
+    var idx=parseInt(e.target.dataset.eidx),val=e.target.value;
+    if(!state.modalData.editTasks)return;
+    state.modalData.editTasks=state.modalData.editTasks.map(function(t,i){
+      if(i!==idx)return t;
+      var newEnd=t.startDate&&val<t.startDate?t.startDate:val;
+      var dur=t.startDate&&newEnd?Math.max(1,daysDiff(newEnd,t.startDate)+1):(t.duration||1);
+      return Object.assign({},t,{endDate:newEnd,duration:dur});
+    });
+    render();
+  });
+  // 快速加入預設工程
+  onAll('.e-quick-add','click',function(e){
+    var name=e.currentTarget.dataset.name,dur=parseInt(e.currentTarget.dataset.dur)||1;
+    var newTask={id:uid(),name:name,duration:dur,startDate:'',endDate:'',status:'pending',reports:[],contacts:[],materials:[],isDateBased:false};
+    if(state.modalData.editTasks)state.modalData.editTasks=state.modalData.editTasks.concat([newTask]);
+    render();
+  });
+  // 自訂新增
+  on('#eBtnAddCustom','click',function(){
+    var name=qs('#eCustomName')&&qs('#eCustomName').value.trim();
+    var dur=parseInt(qs('#eCustomDur')&&qs('#eCustomDur').value)||1;
+    if(!name)return;
+    var newTask={id:uid(),name:name,duration:dur,startDate:'',endDate:'',status:'pending',reports:[],contacts:[],materials:[],isDateBased:false};
+    if(state.modalData.editTasks)state.modalData.editTasks=state.modalData.editTasks.concat([newTask]);
+    render();
+  });
+  on('#eCustomName','keydown',function(e){if(e.key==='Enter'){var b=qs('#eBtnAddCustom');if(b)b.click();}});
+
+  // 拖曳排序（Edit Tasks Modal）
+  var eDragIdx=null;
+  onAll('#editTaskList .etask-row','dragstart',function(e){eDragIdx=parseInt(e.currentTarget.dataset.eidx);e.dataTransfer.effectAllowed='move';});
+  onAll('#editTaskList .etask-row','dragover',function(e){e.preventDefault();});
+  onAll('#editTaskList .etask-row','dragenter',function(e){e.currentTarget.classList.add('drag-over-row');});
+  onAll('#editTaskList .etask-row','dragleave',function(e){e.currentTarget.classList.remove('drag-over-row');});
+  onAll('#editTaskList .etask-row','drop',function(e){
+    e.currentTarget.classList.remove('drag-over-row');
+    var overIdx=parseInt(e.currentTarget.dataset.eidx);
+    if(eDragIdx===null||eDragIdx===overIdx)return;
+    var arr=state.modalData.editTasks.slice();
+    var item=arr.splice(eDragIdx,1)[0];arr.splice(overIdx,0,item);
+    state.modalData.editTasks=arr;render();eDragIdx=null;
+  });
+
+  // 儲存排程：天數模式從案場開工日自動串接，日期模式保持固定；儲存後依 endDate 排序，若順序有變則提示
+  on('#btnSaveEditTasks','click',function(){
+    var p=getProject();if(!p)return;
+    var tasks=state.modalData.editTasks||[];
+    var aw=p.allowWeekend!==false;
+    var anchorDate=p.startWorkDate||null;
+    // 先串接天數模式的工程
+    var computed=anchorDate
+      ?recalcFrom(tasks,aw,anchorDate)
+      :(function(){var f=null;for(var i=0;i<tasks.length;i++){if(tasks[i].startDate){f=tasks[i].startDate;break;}}return f?recalcFrom(tasks,aw,f):tasks;})();
+    // 排序前後比較
+    var beforeOrder=computed.map(function(t){return t.id;}).join(',');
+    var sorted=sortByEnd(computed.slice());
+    var afterOrder=sorted.map(function(t){return t.id;}).join(',');
+    var reordered=(beforeOrder!==afterOrder);
+    var upd=Object.assign({},p,{tasks:sorted});
+    if(reordered){
+      // 先更新，關 Modal，然後顯示排序警告
+      closeModal();updateLocalProject(upd);saveProjectToGAS(upd);
+      showToast('工程排程已儲存，順序已依結束日期自動調整 ✓');
+    } else {
+      closeModal();updateLocalProject(upd);saveProjectToGAS(upd);showToast('工程排程已儲存 ✓');
+    }
+  });
+
+  // Detail drag（工程表格中的拖曳）
+  var dragIdx=null;
+  onAll('.task-drag-row','dragstart',function(e){dragIdx=parseInt(e.currentTarget.dataset.idx);});
+  onAll('.task-drag-row','dragover',function(e){e.preventDefault();});
+  onAll('.task-drag-row','dragenter',function(e){e.currentTarget.classList.add('drag-over');});
+  onAll('.task-drag-row','dragleave',function(e){e.currentTarget.classList.remove('drag-over');});
+  onAll('.task-drag-row','drop',function(e){
+    e.currentTarget.classList.remove('drag-over');
+    var overIdx=parseInt(e.currentTarget.dataset.idx);
+    if(dragIdx===null||dragIdx===overIdx)return;
+    var p=getProject();var arr=p.tasks.slice();
+    var item=arr.splice(dragIdx,1)[0];arr.splice(overIdx,0,item);
+    var anchor=arr.findIndex(function(t){return t.isAnchor;});
+    var anchorDate=anchor>=0?p.startWorkDate:arr[0]&&arr[0].startDate;
+    var newTasks=recalcFrom(arr,p.allowWeekend,anchorDate||arr[0]&&arr[0].startDate);
+    var upd=Object.assign({},p,{tasks:newTasks});updateLocalProject(upd);saveProjectToGAS(upd);dragIdx=null;showToast('排序已更新 ✓');
+  });
+
+  // Modal 共用
+  on('#modalClose','click',closeModal);on('#modalClose2','click',closeModal);on('#modalCancel','click',closeModal);
+  on('#modalOverlay','click',function(e){if(e.target.id==='modalOverlay')closeModal();});
+  on('#modalConfirm','click',function(){if(state.modalData.onConfirm)state.modalData.onConfirm();});
+
+  // 建立案場
+  on('#pName','input',function(e){state.modalData.name=e.target.value;});
+  on('#pStartWork','input',function(e){state.modalData.startWorkDate=e.target.value;});
+  on('#pOpeningDate','input',function(e){state.modalData.openingDate=e.target.value;});
+  on('#pFenceDate','input',function(e){state.modalData.fenceDate=e.target.value;});
+  on('#pWeekend','change',function(e){state.modalData.weekend=e.target.checked;});
+
+  on('#modalSubmit','click',function(){
+    var name=qs('#pName')&&qs('#pName').value.trim();
+    if(!name){state.modalData.formError='請填寫案場名稱';render();return;}
+    var aw=qs('#pWeekend')?qs('#pWeekend').checked:(state.modalData.weekend!==false);
+    var np={id:uid(),name:name,allowWeekend:aw,tasks:[],status:'active',createdAt:new Date().toISOString(),
+      startWorkDate:qs('#pStartWork')&&qs('#pStartWork').value||null,
+      openingDate:qs('#pOpeningDate')&&qs('#pOpeningDate').value||null,
+      fenceDate:qs('#pFenceDate')&&qs('#pFenceDate').value||null
+    };
+    state.modalData.formError='';closeModal();showLoading('建立案場中…');
+    callGAS('createProject',np).then(function(){setState({projects:state.projects.concat([np])});hideLoading();showToast('案場已建立 ✓');}).catch(function(e){hideLoading();showToast('建立失敗');console.error(e);});
+  });
+
+  // Report
+  on('#btnAddReport','click',function(){setState({modal:'report',modalData:Object.assign({},state.modalData,{subview:'add'})});});
+  on('#reportBack','click',function(){setState({modal:'report',modalData:Object.assign({},state.modalData,{subview:'list',viewId:null})});});
+  on('#reportBack2','click',function(){setState({modal:'report',modalData:Object.assign({},state.modalData,{subview:'list',viewId:null})});});
+  on('#btnSaveReport','click',function(){
+    var title=qs('#rTitle')&&qs('#rTitle').value.trim(),content=qs('#rContent')&&qs('#rContent').value.trim();
+    if(!title||!content){showToast('請填寫標題與內容');return;}
+    var report={id:uid(),taskId:state.modalData.task.id,projectId:state.selectedId,date:qs('#rDate')&&qs('#rDate').value,title:title,content:content,reporter:(qs('#rReporter')&&qs('#rReporter').value.trim())||''};
+    showLoading('儲存中…');
+    callGAS('addReport',report).then(function(){
+      var p=getProject();var newTasks=p.tasks.map(function(t){return t.id===report.taskId?Object.assign({},t,{reports:(t.reports||[]).concat([report])}):t;});
+      var upd=Object.assign({},p,{tasks:newTasks});var updTask=newTasks.find(function(t){return t.id===report.taskId;});
+      updateLocalProject(upd);hideLoading();setState({modal:'report',modalData:{task:updTask,subview:'list'}});showToast('已儲存 ✓');
+    }).catch(function(e){hideLoading();showToast('儲存失敗');console.error(e);});
+  });
+  onAll('.report-item','click',function(e){setState({modal:'report',modalData:Object.assign({},state.modalData,{subview:'view',viewId:e.currentTarget.dataset.rid})});});
+  on('#btnDelReport','click',function(e){
+    var rid=e.currentTarget.dataset.rid,tid=state.modalData.task.id;showLoading('刪除中…');
+    callGAS('deleteReport',{id:rid}).then(function(){
+      var p=getProject();var newTasks=p.tasks.map(function(t){return t.id===tid?Object.assign({},t,{reports:(t.reports||[]).filter(function(r){return r.id!==rid;})}):t;});
+      var upd=Object.assign({},p,{tasks:newTasks});var updTask=newTasks.find(function(t){return t.id===tid;});
+      updateLocalProject(upd);hideLoading();setState({modal:'report',modalData:{task:updTask,subview:'list',viewId:null}});showToast('已刪除');
+    }).catch(function(e){hideLoading();showToast('刪除失敗');});
+  });
+
+  // Contacts
+  on('#btnSaveContact','click',function(){
+    var name=qs('#cNewName')&&qs('#cNewName').value.trim(),phone=qs('#cNewPhone')&&qs('#cNewPhone').value.trim(),taskScope=qs('#cNewTaskScope')&&qs('#cNewTaskScope').value.trim();
+    if(!name){showToast('請填寫姓名');return;}
+    var editId=qs('#btnSaveContact')&&qs('#btnSaveContact').dataset.editId;
+    var c={id:editId||uid(),name:name,phone:phone||'',taskScope:taskScope||''};
+    showLoading('儲存中…');
+    callGAS('saveContact',c).then(function(){
+      var exists=state.contacts.find(function(x){return x.id===c.id;});
+      if(exists)state.contacts=state.contacts.map(function(x){return x.id===c.id?c:x;});else state.contacts=state.contacts.concat([c]);
+      hideLoading();showToast('已儲存 ✓');setState({modal:'contacts',modalData:{}});
+    }).catch(function(){hideLoading();showToast('儲存失敗');});
+  });
+  onAll('.btn-edit-contact','click',function(e){setState({modal:'contacts',modalData:{editContactId:e.currentTarget.dataset.cid}});});
+  onAll('.btn-del-contact','click',function(e){
+    var cid=e.currentTarget.dataset.cid,c=state.contacts.find(function(x){return x.id===cid;});
+    setState({modal:'confirm',modalData:{msg:'確定要刪除「'+(c?c.name:'')+'」？',onConfirm:function(){
+      closeModal();showLoading('刪除中…');
+      callGAS('deleteContact',{id:cid}).then(function(){state.contacts=state.contacts.filter(function(x){return x.id!==cid;});hideLoading();showToast('已刪除');setState({modal:'contacts',modalData:{}});}).catch(function(){hideLoading();showToast('刪除失敗');});
+    }}});
+  });
+  on('#btnCancelEditContact','click',function(){setState({modal:'contacts',modalData:{}});});
+
+  onAll('.btn-task-contacts','click',function(e){setState({modal:'taskContacts',modalData:{taskId:e.currentTarget.dataset.tid}});});
+  on('#btnAddExistingContact','click',function(){
+    var sel=qs('#tcSelectExisting');if(!sel||!sel.value)return;
+    var c=state.contacts.find(function(x){return x.id===sel.value;});if(!c)return;
+    var p=getProject(),tid=state.modalData.taskId;
+    var upd=Object.assign({},p,{tasks:p.tasks.map(function(t){return t.id!==tid?t:Object.assign({},t,{contacts:(t.contacts||[]).concat([{id:c.id,name:c.name,phone:c.phone}])});})});
+    updateLocalProject(upd);saveProjectToGAS(upd);setState({modal:'taskContacts',modalData:{taskId:tid}});showToast('已加入 ✓');
+  });
+  on('#btnAddNewContact','click',function(){
+    var name=qs('#tcNewName')&&qs('#tcNewName').value.trim(),phone=qs('#tcNewPhone')&&qs('#tcNewPhone').value.trim();
+    if(!name){showToast('請填寫姓名');return;}
+    var c={id:uid(),name:name,phone:phone||'',taskScope:''};showLoading('新增中…');
+    callGAS('saveContact',c).then(function(){
+      state.contacts=state.contacts.concat([c]);
+      var p=getProject(),tid=state.modalData.taskId;
+      var upd=Object.assign({},p,{tasks:p.tasks.map(function(t){return t.id!==tid?t:Object.assign({},t,{contacts:(t.contacts||[]).concat([{id:c.id,name:c.name,phone:c.phone}])});})});
+      updateLocalProject(upd);saveProjectToGAS(upd);hideLoading();showToast('已新增 ✓');setState({modal:'taskContacts',modalData:{taskId:tid}});
+    }).catch(function(){hideLoading();showToast('新增失敗');});
+  });
+  onAll('.btn-remove-task-contact','click',function(e){
+    var cid=e.currentTarget.dataset.cid,p=getProject(),tid=state.modalData.taskId;
+    var upd=Object.assign({},p,{tasks:p.tasks.map(function(t){return t.id!==tid?t:Object.assign({},t,{contacts:(t.contacts||[]).filter(function(c){return c.id!==cid;})});})});
+    updateLocalProject(upd);saveProjectToGAS(upd);setState({modal:'taskContacts',modalData:{taskId:tid}});showToast('已移除');
+  });
+
+  // Materials
+  onAll('.btn-materials','click',function(e){setState({modal:'materials',modalData:{taskId:e.currentTarget.dataset.tid}});});
+  on('#btnAddMaterial','click',function(){
+    var scope=qs('#matScope')&&qs('#matScope').value.trim(),material=qs('#matMaterial')&&qs('#matMaterial').value.trim(),note=qs('#matNote')&&qs('#matNote').value.trim();
+    if(!scope||!material){showToast('請填寫適用範圍與材質');return;}
+    var p=getProject(),tid=state.modalData.taskId,m={id:uid(),scope:scope,material:material,note:note||''};
+    var upd=Object.assign({},p,{tasks:p.tasks.map(function(t){return t.id!==tid?t:Object.assign({},t,{materials:(t.materials||[]).concat([m])});})});
+    updateLocalProject(upd);saveProjectToGAS(upd);setState({modal:'materials',modalData:{taskId:tid}});showToast('已加入 ✓');
+  });
+  onAll('.btn-del-material','click',function(e){
+    var midx=parseInt(e.currentTarget.dataset.midx),p=getProject(),tid=state.modalData.taskId;
+    var upd=Object.assign({},p,{tasks:p.tasks.map(function(t){return t.id!==tid?t:Object.assign({},t,{materials:(t.materials||[]).filter(function(_,i){return i!==midx;})});})});
+    updateLocalProject(upd);saveProjectToGAS(upd);setState({modal:'materials',modalData:{taskId:tid}});showToast('已刪除');
+  });
+
+  on('#btnSaveContact','click',function(){});// prevent double bind
+}
+
+// ── Init ─────────────────────────────────────────
+function init(){
+  showLoading('載入資料中…');
+  Promise.all([
+    callGAS('getAllData',{}).catch(function(){return[];}),
+    callGAS('getAllContacts',{}).catch(function(){return[];})
+  ]).then(function(results){
+    state.projects=results[0]||[];state.contacts=results[1]||[];
+    hideLoading();render();
+  });
+}
+init();
+</script>
+</body>
+</html>
