@@ -190,7 +190,7 @@ textarea.form-input{resize:vertical;min-height:90px}
 // Gemini 分析已移至 GAS 後端，前端不再持有 API Key
 
 // ── GAS Web App URL ─────────────────────────────────
-var GAS_URL='https://script.google.com/macros/s/AKfycbxJdwVe6XYu6WsiUBX_awsIcRtp2_sz7YM392gCTNUZrpCKARHPuhWieA4WHSDBz02X/exec';
+var GAS_URL='https://script.google.com/macros/s/AKfycby04hovmxSADutY1EnKIXdF-rID_BbgmQdHdqNMguqHFUg9cPsEcmE6NdUkB3b6cUbn/exec';
 
 function callGAS(action,payload){
   return fetch(GAS_URL+'?action='+encodeURIComponent(action)+'&payload='+encodeURIComponent(JSON.stringify(payload||{})),{
