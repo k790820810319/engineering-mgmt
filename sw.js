@@ -1,7 +1,10 @@
-const CACHE_NAME = 'engineering-mgmt-v1';
+const CACHE_NAME = 'engineering-mgmt-v2';
 const ASSETS = [
-  '/',
-  '/index.html'
+  '/engineering-mgmt/',
+  '/engineering-mgmt/index.html',
+  '/engineering-mgmt/manifest.json',
+  '/engineering-mgmt/icon-192.png',
+  '/engineering-mgmt/icon-512.png'
 ];
 
 // 安裝：快取核心檔案
