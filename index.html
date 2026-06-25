@@ -192,11 +192,31 @@ textarea.form-input{resize:vertical;min-height:90px}
 // ── GAS Web App URL ─────────────────────────────────
 var GAS_URL='https://script.google.com/macros/s/AKfycby04hovmxSADutY1EnKIXdF-rID_BbgmQdHdqNMguqHFUg9cPsEcmE6NdUkB3b6cUbn/exec';
 
+// JSONP 呼叫（解決 CORS 問題）
+var _jsonpCallbacks={};
+var _cbCounter=0;
 function callGAS(action,payload){
-  return fetch(GAS_URL+'?action='+encodeURIComponent(action)+'&payload='+encodeURIComponent(JSON.stringify(payload||{})),{
-    method:'GET',
-    mode:'cors'
-  }).then(function(r){return r.json();});
+  return new Promise(function(resolve,reject){
+    var cbName='_gcb'+(++_cbCounter)+'_'+Date.now();
+    var timer=setTimeout(function(){
+      delete window[cbName];delete _jsonpCallbacks[cbName];
+      reject(new Error('GAS timeout'));
+    },30000);
+    window[cbName]=function(data){
+      clearTimeout(timer);
+      delete window[cbName];
+      resolve(data);
+    };
+    var url=GAS_URL
+      +'?action='+encodeURIComponent(action)
+      +'&payload='+encodeURIComponent(JSON.stringify(payload||{}))
+      +'&callback='+cbName;
+    var s=document.createElement('script');
+    s.src=url;
+    s.onerror=function(){clearTimeout(timer);delete window[cbName];reject(new Error('GAS load error'));};
+    document.head.appendChild(s);
+    s.onload=function(){document.head.removeChild(s);};
+  });
 }
 
 // ── PWA Service Worker 註冊 ──────────────────────────
